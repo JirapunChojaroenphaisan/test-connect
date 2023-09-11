@@ -1,0 +1,13 @@
+apiVersion: platform.confluent.io/v1beta1
+kind: Connect
+metadata:
+  name: connect
+spec:
+  build:
+    type: onDemand                                           
+    onDemand:
+      plugins:
+        confluentHub:                                          
+          - name: debezium-connector-mysql:2.2.1                                             
+            owner: debezium                                            
+            version: 2.2.1                
