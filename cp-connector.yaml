@@ -18,3 +18,6 @@ spec:
           - name: kafka-connect-jdbc # the url is used here as we needed to build our own connector lib to include the mysql jdbc jar
             archivePath: https://raw.githubusercontent.com/confluentinc/confluent-kubernetes-examples/master/hybrid/ccloud-JDBC-mysql/confluentinc-kafka-connect-jdbc-10.2.5.zip
             checksum: 9d033fabac89ec0b35a97246f7ca3a36800bcb402ccfbd76adebd4c4c9ca6e7d6a044a9162383a18f99400893581b55a87b9fe89e35276507e9a3fb6cff3fda0
+          - name: debezium-connector-mysql
+            archivePath: https://github.com/JirapunChojaroenphaisan/test-connect/raw/main/debezium-debezium-connector-mysql-2.2.1.zip
+            checksum: 4a2b32df35d5afada4141b68fd4a32742705b910373f8798dde9eb211458f9c4ed82be7c33820f80d1635aca0a9c47e58e8d3b0e00f8fa83136965a1844a4662
