@@ -98,7 +98,7 @@ metadata:
   name: schemaregistry
   namespace: confluent
 spec:
-  replicas: 2
+  replicas: 1
   image:
     application: confluentinc/cp-schema-registry:7.5.0
     init: confluentinc/confluent-init-container:2.7.0
