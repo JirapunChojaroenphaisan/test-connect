@@ -14,9 +14,15 @@ spec:
       plugins:
         locationType: confluentHub
         confluentHub:
-          - name: kafka-connect-datagen
+          - name: kafka-connect-jdbc
             owner: confluentinc
-            version: 0.5.2
+            version: 10.7.4
+          - name: debezium-connector-mysql
+            owner: debezium
+            version: 2.2.1
+          - name: debezium-connector-postgresql
+            owner: debezium
+            version: 2.2.1
   dependencies:
     kafka:
       bootstrapEndpoint: kafka:9071
