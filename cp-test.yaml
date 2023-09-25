@@ -1,3 +1,5 @@
+#https://github.com/confluentinc/confluent-kubernetes-examples/blob/master/quickstart-deploy/confluent-platform-singlenode.yaml
+#add connector
 apiVersion: platform.confluent.io/v1beta1
 kind: Zookeeper
 metadata:
@@ -11,6 +13,10 @@ spec:
   dataVolumeCapacity: 10Gi
   logVolumeCapacity: 10Gi
   podTemplate:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
     podSecurityContext:
       fsGroup: 1000
       runAsUser: 1000
@@ -27,11 +33,29 @@ spec:
     application: confluentinc/cp-server:7.5.0
     init: confluentinc/confluent-init-container:2.7.0
   dataVolumeCapacity: 10Gi
+  configOverrides:
+    server:
+      - "confluent.license.topic.replication.factor=1"
+      - "confluent.metrics.reporter.topic.replicas=1"
+      - "confluent.tier.metadata.replication.factor=1"
+      - "confluent.metadata.topic.replication.factor=1"
+      - "confluent.balancer.topic.replication.factor=1"
+      - "confluent.security.event.logger.exporter.kafka.topic.replicas=1"
+      - "event.logger.exporter.kafka.topic.replicas=1"
+      - "offsets.topic.replication.factor=1"
+      - "confluent.cluster.link.enable=true"
+      - "password.encoder.secret=secret"
   podTemplate:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
     podSecurityContext:
       fsGroup: 1000
       runAsUser: 1000
       runAsNonRoot: true
+  metricReporter:
+    enabled: true
 ---
 apiVersion: platform.confluent.io/v1beta1
 kind: Connect
@@ -43,7 +67,36 @@ spec:
   image:
     application: confluentinc/cp-server-connect:7.5.0
     init: confluentinc/confluent-init-container:2.7.0
+  build:
+    type: onDemand
+    onDemand:
+      plugins:
+        locationType: url
+        url:
+          - name: kafka-connect-jdbc # the url is used here as we needed to build our own connector lib to include the mysql jdbc jar
+            archivePath: https://raw.githubusercontent.com/confluentinc/confluent-kubernetes-examples/master/hybrid/ccloud-JDBC-mysql/confluentinc-kafka-connect-jdbc-10.2.5.zip
+            checksum: 9d033fabac89ec0b35a97246f7ca3a36800bcb402ccfbd76adebd4c4c9ca6e7d6a044a9162383a18f99400893581b55a87b9fe89e35276507e9a3fb6cff3fda0
+          - name: debezium-connector-mysql
+            archivePath: https://github.com/JirapunChojaroenphaisan/test-connect/raw/main/debezium-debezium-connector-mysql-2.2.1.zip
+            checksum: 4a2b32df35d5afada4141b68fd4a32742705b910373f8798dde9eb211458f9c4ed82be7c33820f80d1635aca0a9c47e58e8d3b0e00f8fa83136965a1844a4662
+          - name: debezium-connector-postgresql
+            archivePath: https://github.com/JirapunChojaroenphaisan/test-connect/raw/main/debezium-debezium-connector-postgresql-2.2.1.zip
+            checksum: 55d9b0f5f656d6032a671974d89428186538b7830134827a665542750461cacb06cdffd3b5787ef59e94fc1eef04fafe3918a82a179e6fcd1a6394ca8cc04ded
+  configOverrides:
+    server:
+      - config.storage.replication.factor=1
+      - offset.storage.replication.factor=1
+      - status.storage.replication.factor=1
   podTemplate:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    probe:
+      liveness:
+        periodSeconds: 10
+        failureThreshold: 5
+        timeoutSeconds: 500 
     podSecurityContext:
       fsGroup: 1000
       runAsUser: 1000
@@ -60,7 +113,20 @@ spec:
     application: confluentinc/cp-ksqldb-server:7.5.0
     init: confluentinc/confluent-init-container:2.7.0
   dataVolumeCapacity: 10Gi
+  internalTopicReplicationFactor: 1
+  dependencies:
+    schemaRegistry:
+      url: http://schemaregistry.confluent.svc.cluster.local:8081
   podTemplate:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    probe:
+      liveness:
+        periodSeconds: 10
+        failureThreshold: 5
+        timeoutSeconds: 500 
     podSecurityContext:
       fsGroup: 1000
       runAsUser: 1000
@@ -77,7 +143,28 @@ spec:
     application: confluentinc/cp-enterprise-control-center:7.5.0
     init: confluentinc/confluent-init-container:2.7.0
   dataVolumeCapacity: 10Gi
+  configOverrides:
+    server:
+      - confluent.controlcenter.command.topic.replication=1
+      - confluent.controlcenter.replication.factor=1
+      - confluent.metrics.reporter.topic.replicas=1
+      - confluent.metrics.topic.replication=1
+      - confluent.monitoring.interceptor.topic.replication=1
+      - confluent.controlcenter.internal.topics.replication=1
+  externalAccess:
+    type: loadBalancer
+    loadBalancer:
+      domain: minikube.domain
   podTemplate:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+    probe:
+      liveness:
+        periodSeconds: 10
+        failureThreshold: 5
+        timeoutSeconds: 500
     podSecurityContext:
       fsGroup: 1000
       runAsUser: 1000
@@ -103,8 +190,34 @@ spec:
     application: confluentinc/cp-schema-registry:7.5.0
     init: confluentinc/confluent-init-container:2.7.0
   podTemplate:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
     podSecurityContext:
       fsGroup: 1000
       runAsUser: 1000
       runAsNonRoot: true
 ---
+apiVersion: platform.confluent.io/v1beta1
+kind: KafkaRestProxy
+metadata:
+  name: kafkarestproxy
+  namespace: confluent
+spec:
+  replicas: 1
+  image:
+    application: confluentinc/cp-kafka-rest:7.5.0
+    init: confluentinc/confluent-init-container:2.7.0
+  dependencies:
+    schemaRegistry:
+      url: http://schemaregistry.confluent.svc.cluster.local:8081
+  podTemplate:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    podSecurityContext:
+      fsGroup: 1000
+      runAsUser: 1000
+      runAsNonRoot: true
