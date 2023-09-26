@@ -71,17 +71,17 @@ spec:
     type: onDemand
     onDemand:
       plugins:
-        locationType: url
-        url:
-          - name: kafka-connect-jdbc # the url is used here as we needed to build our own connector lib to include the mysql jdbc jar
-            archivePath: https://raw.githubusercontent.com/confluentinc/confluent-kubernetes-examples/master/hybrid/ccloud-JDBC-mysql/confluentinc-kafka-connect-jdbc-10.2.5.zip
-            checksum: 9d033fabac89ec0b35a97246f7ca3a36800bcb402ccfbd76adebd4c4c9ca6e7d6a044a9162383a18f99400893581b55a87b9fe89e35276507e9a3fb6cff3fda0
+        locationType: confluentHub
+        confluentHub:
+          - name: kafka-connect-jdbc
+            owner: confluentinc
+            version: 10.7.4
           - name: debezium-connector-mysql
-            archivePath: https://github.com/JirapunChojaroenphaisan/test-connect/raw/main/debezium-debezium-connector-mysql-2.2.1.zip
-            checksum: 4a2b32df35d5afada4141b68fd4a32742705b910373f8798dde9eb211458f9c4ed82be7c33820f80d1635aca0a9c47e58e8d3b0e00f8fa83136965a1844a4662
+            owner: debezium
+            version: 2.2.1
           - name: debezium-connector-postgresql
-            archivePath: https://github.com/JirapunChojaroenphaisan/test-connect/raw/main/debezium-debezium-connector-postgresql-2.2.1.zip
-            checksum: 55d9b0f5f656d6032a671974d89428186538b7830134827a665542750461cacb06cdffd3b5787ef59e94fc1eef04fafe3918a82a179e6fcd1a6394ca8cc04ded
+            owner: debezium
+            version: 2.2.1
   configOverrides:
     server:
       - config.storage.replication.factor=1
